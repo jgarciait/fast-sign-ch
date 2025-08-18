@@ -1,0 +1,312 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* React-PDF - Using native props instead of CSS overrides */
+/* TextLayer and AnnotationLayer controlled via renderTextLayer={false} renderAnnotationLayer={true} */
+
+/* PDF Document Container Improvements */
+@layer components {
+  .pdf-document-container {
+    @apply w-full h-full min-h-0 overflow-auto;
+    /* Improved scroll behavior */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* Better performance on mobile */
+    will-change: scroll-position;
+    /* Responsive sizing */
+    container-type: size;
+  }
+
+  .pdf-document-wrapper {
+    @apply w-full min-h-full flex justify-center items-start p-2 md:p-4;
+    /* Responsive padding */
+    padding: clamp(0.5rem, 2vw, 1rem);
+  }
+
+  .pdf-document-content {
+    @apply overflow-hidden;
+    /* Responsive width with max constraints - 5% wider */
+    width: auto;
+    /* Maintain aspect ratio */
+    aspect-ratio: auto;
+    /* Smooth scaling transitions */
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* React-PDF specific improvements */
+  .react-pdf__Document {
+    @apply w-full h-auto;
+    /* Ensure proper sizing */
+    display: block !important;
+    /* Allow natural sizing within container */
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .react-pdf__Page {
+    @apply w-full h-auto;
+    /* Responsive scaling - maintain aspect ratio */
+    max-width: 100% !important;
+    height: auto !important;
+    /* Smooth rendering */
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    /* Maintain aspect ratio */
+    object-fit: contain;
+  }
+
+  .react-pdf__Page__canvas {
+    @apply w-full h-auto;
+    /* Responsive canvas - maintain natural dimensions */
+    max-width: 100% !important;
+    height: auto !important;
+    /* Maintain aspect ratio */
+    object-fit: contain;
+  }
+
+  /* Ensure PDF pages maintain consistent scaling within document containers */
+  .pdf-document-content .react-pdf__Page {
+    /* Allow pages to scale naturally within container */
+    max-width: 100% !important;
+  }
+
+  .pdf-document-content .react-pdf__Page__canvas {
+    /* Canvas should maintain aspect ratio */
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    .pdf-document-container {
+      /* Better mobile scroll */
+      overscroll-behavior: contain;
+      /* Reduce bounce effect */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .pdf-document-wrapper {
+      @apply p-2;
+      /* Minimal padding on mobile */
+      padding: 0.5rem;
+    }
+
+    .pdf-document-content {
+      /* Full width on mobile, but respect the 5% wider setting */
+      width: 100%;
+      max-width: 105%;
+      /* Adjust shadow for mobile */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* Container queries for responsive behavior */
+  @container (max-width: 600px) {
+    .pdf-document-content {
+      /* Smaller border radius on narrow containers */
+      border-radius: 0.375rem;
+    }
+  }
+
+  /* Auto-fit PDF content to container */
+  .pdf-auto-fit {
+    /* Use CSS to automatically scale content to fit container */
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+    /* Ensure content scales proportionally */
+    aspect-ratio: auto;
+  }
+
+  /* Improved scaling for PDF components */
+  .pdf-document-content > * {
+    /* Child elements should fit container */
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Ensure React-PDF Document adapts to containers without forced scaling */
+  .pdf-auto-fit .react-pdf__Document {
+    /* Allow natural document sizing */
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .pdf-auto-fit .react-pdf__Page {
+    /* Let pages maintain their natural scale */
+    max-width: 100% !important;
+    height: auto !important;
+    /* Smooth rendering */
+    transform-origin: top center;
+  }
+
+  /* Responsive behavior for auto-fit containers */
+  .pdf-auto-fit {
+    /* Ensure container centers content */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  /* Loading states */
+  .pdf-loading-container {
+    @apply flex items-center justify-center;
+    min-height: 50vh;
+    /* Responsive min-height */
+    min-height: clamp(300px, 50vh, 600px);
+  }
+
+  /* Error states */
+  .pdf-error-container {
+    @apply flex flex-col items-center justify-center p-6 md:p-8;
+    min-height: 50vh;
+    /* Responsive min-height */
+    min-height: clamp(300px, 50vh, 600px);
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Animaciones personalizadas para documentos firmados */
+@layer utilities {
+  /* Pulso verde llamativo para documentos firmados */
+  .signed-document-pulse {
+    animation: signedPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+
+  .signed-text-glow {
+    animation: textGlow 2s ease-in-out infinite alternate;
+  }
+
+  .signed-border-glow {
+    animation: signedPulse 2s ease-in-out infinite;
+    border-color: rgb(34 197 94) !important;
+  }
+
+  .progress-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-shine::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: shine 2s infinite;
+  }
+}
+
+@keyframes signedPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+  }
+  to {
+    text-shadow: 0 0 8px rgba(34, 197, 94, 0.8), 0 0 12px rgba(34, 197, 94, 0.3);
+  }
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}

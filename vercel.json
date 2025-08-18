@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "app/api/merge-pdf/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/merge-pdf/save/route.ts": {
+      "maxDuration": 180
+    },
+    "app/api/upload/route.ts": {
+      "maxDuration": 180
+    }
+  },
+  "regions": ["iad1"],
+  "framework": "nextjs"
+}
