@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
+import { getUserRedirectPath } from "@/utils/user-redirect"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -7,9 +8,15 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (data?.user?.id) {
+      // Determine redirect path based on user role
+      const redirectPath = await getUserRedirectPath(data.user.id)
+      return NextResponse.redirect(new URL(redirectPath, request.url))
+    }
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(new URL("/fast-sign", request.url))
+  // Default fallback redirect
+  return NextResponse.redirect(new URL("/fast-sign-docs", request.url))
 }

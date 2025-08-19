@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 import { Logo } from "./logo"
+import { useUserRole } from "@/hooks/use-user-role"
 
 export default function Sidebar({
   user,
@@ -51,6 +52,9 @@ export default function Sidebar({
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  
+  // Get user role from context
+  const { isChofer } = useUserRole()
 
   // Responsive sidebar behavior
   useEffect(() => {
@@ -111,7 +115,7 @@ export default function Sidebar({
     // Si no estamos en fast-sign, dejar que navegue normalmente
   }
 
-  const navItems: Array<{
+  const allNavItems: Array<{
     name: string
     href: string
     icon: any
@@ -133,7 +137,7 @@ export default function Sidebar({
         icon: Truck,
       },
       {
-        name: "Mis Asignaciones",
+        name: "Entregas",
         href: "/mis-asignaciones",
         icon: ClipboardCheck,
       },
@@ -184,6 +188,13 @@ export default function Sidebar({
         icon: Settings,
       },
     ]
+
+  // Filter navigation items based on user role
+  // For choferes: show only "Entregas"
+  // For admins/managers: show all menu items (including "Entregas" which becomes admin view)
+  const navItems = isChofer 
+    ? allNavItems.filter(item => item.name === "Entregas")
+    : allNavItems
 
   const SidebarContent = () => (
     <>

@@ -1,7 +1,9 @@
 import type React from "react"
 import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
-import Sidebar from "@/components/sidebar"
+import { UserRoleProvider } from "@/hooks/use-user-role"
+import ProtectedLayoutClient from "@/components/protected-layout-client"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 export default async function ProtectedLayout({
   children,
@@ -19,9 +21,10 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex h-screen relative">
-      <Sidebar user={user} />
-      <main className="flex-1 w-full lg:w-auto overflow-auto" style={{ backgroundColor: '#F8F9FB' }}>{children}</main>
-    </div>
+    <ErrorBoundary>
+      <UserRoleProvider initialUser={user}>
+        <ProtectedLayoutClient>{children}</ProtectedLayoutClient>
+      </UserRoleProvider>
+    </ErrorBoundary>
   )
 }

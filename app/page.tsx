@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
+import { getUserRedirectPath } from "@/utils/user-redirect"
 import LoginForm from "@/components/login-form"
 import { Logo } from "@/components/logo"
 
@@ -12,7 +13,8 @@ export default async function Home() {
   } = await supabase.auth.getUser()
 
   if (user) {
-    redirect("/fast-sign-docs")
+    const redirectPath = await getUserRedirectPath(user.id)
+    redirect(redirectPath)
   }
 
   return (

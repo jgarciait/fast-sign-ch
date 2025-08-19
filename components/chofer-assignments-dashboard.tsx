@@ -38,7 +38,7 @@ export default function ChoferAssignmentsDashboard() {
   useEffect(() => {
     // Organize assignments by date
     const grouped: AssignmentsByDate = {}
-    console.log('🚛 CHOFER DASHBOARD: Organizing assignments by date:', assignments.length)
+    console.log('🚛 DESKTOP CHOFER DASHBOARD: Organizing assignments by date:', assignments.length)
     
     assignments.forEach(assignment => {
       console.log('🚛 CHOFER DASHBOARD: Processing assignment:', assignment.id, 'expected_delivery_date:', assignment.expected_delivery_date)
@@ -76,20 +76,27 @@ export default function ChoferAssignmentsDashboard() {
       console.log('🚛 CHOFER DASHBOARD: Current time:', new Date().toISOString())
       console.log('🚛 CHOFER DASHBOARD: Today key:', format(new Date(), 'yyyy-MM-dd'))
       
-      console.log('🚛 CHOFER DASHBOARD: Assignment from DB was assigned to:', 'b2905b30-b588-47f6-ae88-11ecc186b0ae')
+      console.log('🚛 CHOFER DASHBOARD: Loading assignments for current user')
       
-      const result = await getMyAssignments({
-        status: ['assigned', 'in_transit', 'pending']
-      })
+      // Load ALL assignments for this chofer (not just pending ones)
+      const result = await getMyAssignments({})
+      
+      console.log('🚛 CHOFER DASHBOARD: Raw API result:', result)
 
       console.log('🚛 CHOFER DASHBOARD: getMyAssignments result:', result)
 
       if (result.success && result.data) {
-        console.log('🚛 CHOFER DASHBOARD: Setting assignments:', result.data.length, 'assignments')
-        console.log('🚛 CHOFER DASHBOARD: Assignment details:', result.data)
+        console.log('🚛 DESKTOP CHOFER DASHBOARD: Setting assignments:', result.data.length, 'assignments')
+        console.log('🚛 DESKTOP CHOFER DASHBOARD: Assignment details:', result.data.map(a => ({
+          id: a.id,
+          status: a.status,
+          file_name: a.document?.file_name,
+          assigned_to_user_id: a.assigned_to_user_id
+        })))
         setAssignments(result.data)
       } else {
-        console.error('Error loading assignments:', result.error)
+        console.error('🚛 DESKTOP Error loading assignments:', result.error)
+        setAssignments([])
       }
     } catch (error) {
       console.error('Error loading assignments:', error)
@@ -124,25 +131,47 @@ export default function ChoferAssignmentsDashboard() {
   }
 
   const getStatusCount = (status: string) => {
-    return assignments.filter(a => {
-      const docStatus = a.document?.status || ''
-      return docStatus.toLowerCase() === status.toLowerCase()
-    }).length
+    const count = assignments.filter(assignment => assignment.status === status).length
+    console.log(`🚛 DESKTOP DASHBOARD: Status ${status} count: ${count}`)
+    console.log(`🚛 DESKTOP DASHBOARD: All assignment statuses:`, assignments.map(a => ({ id: a.id, status: a.status, file_name: a.document?.file_name })))
+    return count
   }
 
   const handleStatusUpdate = (assignmentId: string, newStatus: string) => {
     setAssignments(prev => 
       prev.map(assignment => 
         assignment.id === assignmentId 
-          ? { ...assignment, document: { ...assignment.document, status: newStatus } }
+          ? { ...assignment, status: newStatus }
           : assignment
       )
     )
   }
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'assigned': return 'bg-blue-100 text-blue-800'
+      case 'in_transit': return 'bg-yellow-100 text-yellow-800'
+      case 'completed': return 'bg-green-100 text-green-800'
+      case 'signed': return 'bg-emerald-100 text-emerald-800'
+      case 'cancelled': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'assigned': return 'Asignado'
+      case 'in_transit': return 'En Tránsito'
+      case 'completed': return 'Completado'
+      case 'signed': return 'Firmado'
+      case 'cancelled': return 'Cancelado'
+      default: return status
+    }
+  }
+
   const renderAssignmentCard = (assignment: AssignmentWithDetails) => {
     const document = assignment.document
-    const status = (document?.status || 'asignado').toLowerCase()
+    const status = assignment.status || 'assigned'
     
     return (
       <Card key={assignment.id} className="mb-4">
@@ -171,12 +200,17 @@ export default function ChoferAssignmentsDashboard() {
               )}
             </div>
             
-            <DocumentStatusUpdater
-              documentId={document?.id || ''}
-              documentName={document?.file_name || 'Documento'}
-              currentStatus={status}
-              onStatusUpdate={(newStatus) => handleStatusUpdate(assignment.id, newStatus)}
-            />
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusBadgeColor(assignment.status)}>
+                {getStatusText(assignment.status)}
+              </Badge>
+              <DocumentStatusUpdater
+                documentId={document?.id || ''}
+                documentName={document?.file_name || 'Documento'}
+                currentStatus={status}
+                onStatusUpdate={(newStatus) => handleStatusUpdate(assignment.id, newStatus)}
+              />
+            </div>
           </div>
         </CardHeader>
         
@@ -230,7 +264,7 @@ export default function ChoferAssignmentsDashboard() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Truck className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
-            <p className="text-lg font-medium text-gray-900">Cargando asignaciones...</p>
+            <p className="text-lg font-medium text-gray-900">Cargando entregas...</p>
           </div>
         </div>
       </div>
@@ -240,7 +274,7 @@ export default function ChoferAssignmentsDashboard() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Asignaciones</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Entregas</h1>
         <p className="text-gray-600">Gestiona tus entregas y actualiza el estatus de los documentos</p>
       </div>
 
@@ -249,7 +283,7 @@ export default function ChoferAssignmentsDashboard() {
         <Card>
           <CardContent className="p-4 text-center">
             <Clock className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-blue-600">{getStatusCount('asignado')}</p>
+            <p className="text-2xl font-bold text-blue-600">{getStatusCount('assigned')}</p>
             <p className="text-sm text-gray-600">Asignados</p>
           </CardContent>
         </Card>
@@ -257,7 +291,7 @@ export default function ChoferAssignmentsDashboard() {
         <Card>
           <CardContent className="p-4 text-center">
             <Truck className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-orange-600">{getStatusCount('en_transito')}</p>
+            <p className="text-2xl font-bold text-orange-600">{getStatusCount('in_transit')}</p>
             <p className="text-sm text-gray-600">En Tránsito</p>
           </CardContent>
         </Card>
@@ -265,15 +299,15 @@ export default function ChoferAssignmentsDashboard() {
         <Card>
           <CardContent className="p-4 text-center">
             <FileText className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-green-600">{getStatusCount('firmado')}</p>
-            <p className="text-sm text-gray-600">Firmados</p>
+            <p className="text-2xl font-bold text-green-600">{getStatusCount('completed') + getStatusCount('signed')}</p>
+            <p className="text-sm text-gray-600">Completados</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="p-4 text-center">
             <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-red-600">{getStatusCount('cancelado')}</p>
+            <p className="text-2xl font-bold text-red-600">{getStatusCount('cancelled')}</p>
             <p className="text-sm text-gray-600">Cancelados</p>
           </CardContent>
         </Card>
@@ -292,14 +326,14 @@ export default function ChoferAssignmentsDashboard() {
             <CardHeader>
               <CardTitle>Entregas para Hoy</CardTitle>
               <CardDescription>
-                {getTodayAssignments().length} asignaciones programadas para hoy
+                {getTodayAssignments().length} entregas programadas para hoy
               </CardDescription>
             </CardHeader>
             <CardContent>
               {getTodayAssignments().length === 0 ? (
                 <div className="text-center py-8">
                   <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No tienes asignaciones para hoy</p>
+                  <p className="text-gray-500">No tienes entregas para hoy</p>
                 </div>
               ) : (
                 getTodayAssignments().map(renderAssignmentCard)
@@ -313,14 +347,14 @@ export default function ChoferAssignmentsDashboard() {
             <CardHeader>
               <CardTitle>Entregas para Mañana</CardTitle>
               <CardDescription>
-                {getTomorrowAssignments().length} asignaciones programadas para mañana
+                {getTomorrowAssignments().length} entregas programadas para mañana
               </CardDescription>
             </CardHeader>
             <CardContent>
               {getTomorrowAssignments().length === 0 ? (
                 <div className="text-center py-8">
                   <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No tienes asignaciones para mañana</p>
+                  <p className="text-gray-500">No tienes entregas para mañana</p>
                 </div>
               ) : (
                 getTomorrowAssignments().map(renderAssignmentCard)
@@ -350,14 +384,14 @@ export default function ChoferAssignmentsDashboard() {
               <CardHeader>
                 <CardTitle>{getDateLabel(selectedDate)}</CardTitle>
                 <CardDescription>
-                  {getAssignmentsForDate(selectedDate).length} asignaciones programadas
+                  {getAssignmentsForDate(selectedDate).length} entregas programadas
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {getAssignmentsForDate(selectedDate).length === 0 ? (
                   <div className="text-center py-8">
                     <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No tienes asignaciones para esta fecha</p>
+                    <p className="text-gray-500">No tienes entregas para esta fecha</p>
                   </div>
                 ) : (
                   getAssignmentsForDate(selectedDate).map(renderAssignmentCard)

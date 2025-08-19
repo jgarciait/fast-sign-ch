@@ -21,7 +21,7 @@ export default function LoginForm() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -31,8 +31,39 @@ export default function LoginForm() {
         return
       }
 
-      router.push("/fast-sign-docs")
-      router.refresh()
+      if (data?.user?.id) {
+        // Check if user is chofer to determine redirect path
+        const { data: choferesGroup } = await supabase
+          .from('groups')
+          .select('id')
+          .eq('group_type', 'choferes')
+          .eq('is_active', true)
+          .maybeSingle()
+
+        let redirectPath = '/fast-sign-docs' // default
+
+        if (choferesGroup) {
+          // Check if user is a member of the choferes group
+          const { data: membership } = await supabase
+            .from('user_group_memberships')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .eq('group_id', choferesGroup.id)
+            .eq('is_active', true)
+            .maybeSingle()
+
+          if (membership) {
+            redirectPath = '/mis-asignaciones'
+          }
+        }
+
+        router.push(redirectPath)
+        router.refresh()
+      } else {
+        // Fallback if no user data
+        router.push("/fast-sign-docs")
+        router.refresh()
+      }
     } catch (err) {
       console.error("Login error:", err)
       setError("Ocurrió un error inesperado")
