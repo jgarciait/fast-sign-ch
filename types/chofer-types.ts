@@ -148,31 +148,31 @@ export interface CreateChoferProfileRequest {
 }
 
 export interface UpdateChoferProfileRequest {
-  first_name?: string
-  last_name?: string
-  phone?: string
-  email?: string
-  emergency_contact_name?: string
-  emergency_contact_phone?: string
-  employee_id?: string
-  license_number?: string
-  license_expiry?: string
-  hire_date?: string
-  truck_plate?: string
-  truck_brand?: string
-  truck_model?: string
-  truck_year?: number
-  truck_color?: string
-  truck_capacity_kg?: number
-  truck_type?: 'pickup' | 'van' | 'truck' | 'motorcycle' | 'other'
+  first_name?: string | undefined
+  last_name?: string | undefined
+  phone?: string | undefined
+  email?: string | undefined
+  emergency_contact_name?: string | undefined
+  emergency_contact_phone?: string | undefined
+  employee_id?: string | undefined
+  license_number?: string | undefined
+  license_expiry?: string | undefined
+  hire_date?: string | undefined
+  truck_plate?: string | undefined
+  truck_brand?: string | undefined
+  truck_model?: string | undefined
+  truck_year?: number | undefined
+  truck_color?: string | undefined
+  truck_capacity_kg?: number | undefined
+  truck_type?: 'pickup' | 'van' | 'truck' | 'motorcycle' | 'other' | undefined
   status?: 'active' | 'inactive' | 'suspended'
   is_available?: boolean
-  address?: string
-  city?: string
-  state?: string
-  postal_code?: string
+  address?: string | undefined
+  city?: string | undefined
+  state?: string | undefined
+  postal_code?: string | undefined
   country?: string
-  notes?: string
+  notes?: string | undefined
 }
 
 export interface CreateChoferDocumentRequest {

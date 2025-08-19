@@ -72,6 +72,16 @@ interface Document {
   file_records?: FileRecord[]
   document_type?: string
   documentStatus?: string
+  document_assignments?: Array<{
+    id: string
+    status: string
+    priority?: string
+    delivery_address?: string
+    client_name?: string
+    expected_delivery_date?: string
+    assigned_at: string
+    completed_at?: string
+  }>
 }
 
 interface VirtualizedDocumentTableProps {
@@ -289,39 +299,32 @@ const VirtualizedDocumentTable = React.memo(({
     }
   }
 
-  // Get document status
+  // Get document status - prioritize assignment status over document status
   const getDocumentStatus = (document: Document) => {
-    const isFastSignDocument = document.document_type === 'fast_sign'
-    let displayStatus = document.documentStatus || "sin_mapeo"
+    // Check if document has assignment status (from delivery/assignment system)
+    const assignments = document.document_assignments || []
     
-    if (isFastSignDocument) {
-      displayStatus = (document.status || 'sin_firma').toLowerCase()
+    let displayStatus = "sin_asignar"
+    if (assignments.length > 0) {
+      // Use the most recent assignment status
+      const latestAssignment = assignments[0] // Assuming ordered by most recent
+      displayStatus = latestAssignment.status || "assigned"
     }
 
     switch (displayStatus) {
-      // Delivery statuses (new)
-      case 'asignado':
+      case 'assigned':
         return { text: 'Asignado', color: 'bg-blue-100 text-blue-800' }
-      case 'en_transito':
-      case 'en transito':
-        return { text: 'En Tránsito', color: 'bg-orange-100 text-orange-800' }
-      case 'firmado':
+      case 'in_progress':
+      case 'in_transit':
+        return { text: 'En Tránsito', color: 'bg-yellow-100 text-yellow-800' }
+      case 'completed':
+        return { text: 'Completado', color: 'bg-green-100 text-green-800' }
       case 'signed':
-        return { text: 'Firmado', color: 'bg-green-100 text-green-800' }
-      case 'cancelado':
+        return { text: 'Firmado', color: 'bg-emerald-100 text-emerald-800' }
+      case 'cancelled':
         return { text: 'Cancelado', color: 'bg-red-100 text-red-800' }
-      
-      // Original statuses
-      case 'pending':
-      case 'pendiente':
-        return { text: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' }
-      case 'expired':
-      case 'expirado':
-        return { text: 'Expirado', color: 'bg-red-100 text-red-800' }
-      case 'sin_firma':
-        return { text: 'Sin Firma', color: 'bg-gray-100 text-gray-800' }
-      case 'sin_mapeo':
-        return { text: 'Sin Mapeo', color: 'bg-purple-100 text-purple-800' }
+      case 'sin_asignar':
+        return { text: 'Sin Asignar', color: 'bg-gray-100 text-gray-800' }
       default:
         return { text: displayStatus, color: 'bg-gray-100 text-gray-800' }
     }

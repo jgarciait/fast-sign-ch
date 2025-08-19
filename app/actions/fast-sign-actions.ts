@@ -225,7 +225,7 @@ export async function getFastSignDocumentsByArchiveStatus(
     const offset = (page - 1) * limit
     console.log('getFastSignDocumentsByArchiveStatus: Calculated offset:', offset)
 
-    // OPTIMIZACIÓN MEJORADA: Consulta principal con solo campos necesarios
+    // OPTIMIZACIÓN MEJORADA: Consulta principal con campos necesarios incluyendo assignments
     let query = supabase
       .from("documents")
       .select(`
@@ -243,6 +243,16 @@ export async function getFastSignDocumentsByArchiveStatus(
         file_record_id,
         category_id,
         case_file_metadata,
+        document_assignments (
+          id,
+          status,
+          priority,
+          delivery_address,
+          client_name,
+          expected_delivery_date,
+          assigned_at,
+          completed_at
+        ),
         file_records (
           id,
           valores_json,

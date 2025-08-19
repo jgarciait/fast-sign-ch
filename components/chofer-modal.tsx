@@ -83,31 +83,31 @@ export default function ChoferModal({
   useEffect(() => {
     if (isOpen && chofer) {
       setFormData({
-        first_name: chofer.first_name || '',
-        last_name: chofer.last_name || '',
-        phone: chofer.phone || '',
-        email: chofer.email || '',
-        emergency_contact_name: chofer.emergency_contact_name || '',
-        emergency_contact_phone: chofer.emergency_contact_phone || '',
-        employee_id: chofer.employee_id || '',
-        license_number: chofer.license_number || '',
-        license_expiry: chofer.license_expiry || '',
-        hire_date: chofer.hire_date || '',
-        truck_plate: chofer.truck_plate || '',
-        truck_brand: chofer.truck_brand || '',
-        truck_model: chofer.truck_model || '',
+        first_name: chofer.first_name || undefined,
+        last_name: chofer.last_name || undefined,
+        phone: chofer.phone || undefined,
+        email: chofer.email || undefined,
+        emergency_contact_name: chofer.emergency_contact_name || undefined,
+        emergency_contact_phone: chofer.emergency_contact_phone || undefined,
+        employee_id: chofer.employee_id || undefined,
+        license_number: chofer.license_number || undefined,
+        license_expiry: chofer.license_expiry || undefined,
+        hire_date: chofer.hire_date || undefined,
+        truck_plate: chofer.truck_plate || undefined,
+        truck_brand: chofer.truck_brand || undefined,
+        truck_model: chofer.truck_model || undefined,
         truck_year: chofer.truck_year || undefined,
-        truck_color: chofer.truck_color || '',
+        truck_color: chofer.truck_color || undefined,
         truck_capacity_kg: chofer.truck_capacity_kg || undefined,
         truck_type: chofer.truck_type || undefined,
         status: chofer.status,
         is_available: chofer.is_available,
-        address: chofer.address || '',
-        city: chofer.city || '',
-        state: chofer.state || '',
-        postal_code: chofer.postal_code || '',
+        address: chofer.address || undefined,
+        city: chofer.city || undefined,
+        state: chofer.state || undefined,
+        postal_code: chofer.postal_code || undefined,
         country: chofer.country || 'República Dominicana',
-        notes: chofer.notes || '',
+        notes: chofer.notes || undefined,
       })
       
       // Set dates
@@ -129,9 +129,11 @@ export default function ChoferModal({
   }, [isOpen, chofer])
 
   const handleInputChange = (field: keyof UpdateChoferProfileRequest, value: any) => {
+    // Convert empty strings to undefined for cleaner data
+    const cleanValue = value === '' ? undefined : value
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: cleanValue
     }))
   }
 
@@ -140,13 +142,13 @@ export default function ChoferModal({
       setLicenseExpiryDate(date)
       setFormData(prev => ({
         ...prev,
-        license_expiry: date ? format(date, 'yyyy-MM-dd') : ''
+        license_expiry: date ? format(date, 'yyyy-MM-dd') : undefined
       }))
     } else if (field === 'hire_date') {
       setHireDateValue(date)
       setFormData(prev => ({
         ...prev,
-        hire_date: date ? format(date, 'yyyy-MM-dd') : ''
+        hire_date: date ? format(date, 'yyyy-MM-dd') : undefined
       }))
     }
   }
@@ -154,31 +156,83 @@ export default function ChoferModal({
   const handleSubmit = async () => {
     if (!chofer) return
 
+    console.log('🔧 MODAL: Submit called for chofer:', { id: chofer.id, user_id: chofer.user_id, hasFormData: !!formData })
+
     setLoading(true)
     try {
       let result
 
+      // Always try to update if we have any ID (chofer.id is the profile ID)
       if (chofer.id) {
-        // Update existing chofer
+        // Update existing chofer profile
+        console.log('🔧 MODAL: Updating existing profile with ID:', chofer.id)
         result = await updateChoferProfile(chofer.id, formData)
       } else {
-        // Create new chofer profile (this case might not happen in current flow)
-        const createData: CreateChoferProfileRequest = {
-          user_id: chofer.user_id,
-          ...formData
+        // This should not happen in edit mode, but let's try to recover
+        console.error('❌ MODAL: No chofer.id found! This indicates a data issue.')
+        console.error('❌ MODAL: Expected to UPDATE but chofer.id is missing. Chofer data:', chofer)
+        
+        if (chofer.user_id) {
+          console.log('🔧 MODAL: Attempting to find/create profile by user_id:', chofer.user_id)
+          
+          // Try to get the existing profile by user_id
+          const { getChoferByUserId, createChoferProfile } = await import("@/app/actions/chofer-actions")
+          let existingProfile = await getChoferByUserId(chofer.user_id)
+          
+          if (existingProfile.success && existingProfile.data?.id) {
+            console.log('🔧 MODAL: Found existing profile with ID:', existingProfile.data.id)
+            result = await updateChoferProfile(existingProfile.data.id, formData)
+          } else {
+            console.log('🔧 MODAL: No existing profile found, creating new one for user_id:', chofer.user_id)
+            // Create a new chofer profile if it doesn't exist
+            const createData: CreateChoferProfileRequest = {
+              user_id: chofer.user_id,
+              ...formData
+            }
+            
+            result = await createChoferProfile(createData)
+            
+            if (result.success) {
+              console.log('🔧 MODAL: Successfully created new profile')
+            } else {
+              console.error('❌ MODAL: Failed to create new profile:', result.error)
+            }
+          }
+        } else {
+          console.error('❌ MODAL: No user_id available either')
+          toast.error("Error: Datos del chofer incompletos - no se puede identificar el usuario")
+          setLoading(false)
+          return
         }
-        result = await createChoferProfile(createData)
       }
 
       if (result.success && result.data) {
+        console.log('✅ MODAL: Update successful, notifying parent with data:', result.data)
+        
+        // Ensure the updated data has all necessary fields from the original chofer
+        const updatedChoferWithAllFields = {
+          ...chofer, // Keep original fields like profiles, documents, etc.
+          ...result.data, // Override with updated fields
+          id: result.data.id || chofer.id, // Ensure ID is preserved
+          user_id: result.data.user_id || chofer.user_id // Ensure user_id is preserved
+        }
+        
+        console.log('✅ MODAL: Merged data being sent to parent:', updatedChoferWithAllFields)
+        
+        // Immediately update parent state
+        onChoferUpdated(updatedChoferWithAllFields)
+        
+        // Show success message
         toast.success(`Perfil de ${getChoferFullName(result.data)} actualizado correctamente`)
-        onChoferUpdated(result.data)
+        
+        // Close modal
         onClose()
       } else {
+        console.error('❌ MODAL: Update failed:', result.error)
         toast.error(result.error || "Error al actualizar el perfil")
       }
     } catch (error) {
-      console.error("Error updating chofer:", error)
+      console.error("❌ MODAL: Unexpected error updating chofer:", error)
       toast.error("Error inesperado al actualizar el perfil")
     } finally {
       setLoading(false)
@@ -469,7 +523,12 @@ export default function ChoferModal({
                         min="1990"
                         max={new Date().getFullYear()}
                         value={formData.truck_year || ''}
-                        onChange={(e) => handleInputChange('truck_year', parseInt(e.target.value) || undefined)}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const numericValue = value ? parseInt(value, 10) : undefined
+                          // Only set valid numbers or undefined
+                          handleInputChange('truck_year', !isNaN(numericValue!) && numericValue! > 0 ? numericValue : undefined)
+                        }}
                         placeholder="2020"
                       />
                     </div>
@@ -491,8 +550,14 @@ export default function ChoferModal({
                         id="truck_capacity_kg"
                         type="number"
                         min="0"
+                        step="0.01"
                         value={formData.truck_capacity_kg || ''}
-                        onChange={(e) => handleInputChange('truck_capacity_kg', parseFloat(e.target.value) || undefined)}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const numericValue = value ? parseFloat(value) : undefined
+                          // Only set valid numbers or undefined
+                          handleInputChange('truck_capacity_kg', !isNaN(numericValue!) && numericValue! >= 0 ? numericValue : undefined)
+                        }}
                         placeholder="1000"
                       />
                     </div>

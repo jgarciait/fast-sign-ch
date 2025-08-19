@@ -62,11 +62,41 @@ export async function getChoferes(
 
     const choferUserIds = groupMembers.map(m => m.user_id)
     
-    // Build query for chofer profiles
+    // Build query for chofer profiles with explicit ID selection
     let query = supabase
       .from('chofer_profiles')
       .select(`
-        *,
+        id,
+        user_id,
+        first_name,
+        last_name,
+        phone,
+        email,
+        emergency_contact_name,
+        emergency_contact_phone,
+        employee_id,
+        license_number,
+        license_expiry,
+        hire_date,
+        truck_plate,
+        truck_brand,
+        truck_model,
+        truck_year,
+        truck_color,
+        truck_capacity_kg,
+        truck_type,
+        status,
+        is_available,
+        address,
+        city,
+        state,
+        postal_code,
+        country,
+        notes,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by,
         profiles!chofer_profiles_user_id_fkey(id, email, first_name, last_name),
         documents:chofer_documents(count)
       `, { count: 'exact' })
@@ -120,6 +150,43 @@ export async function getChoferes(
       return { success: false, error: error.message }
     }
 
+    // Check if any choferes have missing IDs
+    const missingIdCount = choferes?.filter(c => !c.id).length || 0
+    if (missingIdCount > 0) {
+      console.log('🔧 getChoferes: Found', missingIdCount, 'choferes with missing IDs')
+    }
+    
+    // Ensure all choferes have valid IDs - create missing profiles if needed
+    if (choferes) {
+      for (let i = 0; i < choferes.length; i++) {
+        if (!choferes[i].id && choferes[i].user_id) {
+          console.log('🔧 getChoferes: Chofer missing ID, attempting to create profile for user:', choferes[i].user_id)
+          try {
+            const { error: createError } = await supabase.rpc('ensure_chofer_profile_with_fallback', {
+              target_user_id: choferes[i].user_id,
+              creator_id: user.id
+            })
+            
+            if (!createError) {
+              // Re-fetch this specific chofer to get the ID
+              const { data: refetchedChofer } = await supabase
+                .from('chofer_profiles')
+                .select('id, *')
+                .eq('user_id', choferes[i].user_id)
+                .single()
+              
+              if (refetchedChofer?.id) {
+                console.log('🔧 getChoferes: Successfully created profile with ID:', refetchedChofer.id)
+                choferes[i] = { ...choferes[i], id: refetchedChofer.id }
+              }
+            }
+          } catch (error) {
+            console.error('🔧 getChoferes: Failed to create chofer profile:', error)
+          }
+        }
+      }
+    }
+
     // Create a map of group membership data for easy lookup
     const membershipMap = new Map()
     groupMembers.forEach(member => {
@@ -129,7 +196,7 @@ export async function getChoferes(
     // Transform data to include computed fields
     const choferesWithProfile = choferes?.map(chofer => {
       const membership = membershipMap.get(chofer.user_id)
-      return {
+      const result = {
         ...chofer,
         full_name: `${chofer.first_name || ''} ${chofer.last_name || ''}`.trim(),
         auth_email: chofer.profiles?.email,
@@ -141,6 +208,13 @@ export async function getChoferes(
         assigned_at: membership?.assigned_at,
         assigned_by: membership?.assigned_by,
       }
+      
+      // Warn if ID is still missing after processing
+      if (!result.id) {
+        console.warn('⚠️ getChoferes: Profile still missing ID:', { user_id: result.user_id, email: result.email })
+      }
+      
+      return result
     }) as ChoferWithProfile[]
 
     return { 
@@ -301,30 +375,49 @@ export async function updateChoferProfile(
   data: UpdateChoferProfileRequest
 ): Promise<ChoferResponse> {
   try {
+    console.log('🔧 updateChoferProfile called for profile:', profileId)
+    
     const supabase = await createClient()
     const user = await getCurrentUser()
 
+    // Clean data: convert empty strings to undefined and filter out undefined values
+    const cleanData = Object.fromEntries(
+      Object.entries(data)
+        .map(([key, value]) => [key, value === '' ? undefined : value])
+        .filter(([_, value]) => value !== undefined)
+    )
+
+    const updateData = {
+      ...cleanData,
+      updated_by: user.id,
+      updated_at: new Date().toISOString()
+    }
+
     const { data: profile, error } = await supabase
       .from('chofer_profiles')
-      .update({
-        ...data,
-        updated_by: user.id,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', profileId)
       .select()
       .single()
 
     if (error) {
-      console.error("Error updating chofer profile:", error)
+      console.error("❌ Error updating chofer profile:", error)
+      console.error("❌ Error details:", { 
+        message: error.message, 
+        details: error.details, 
+        hint: error.hint,
+        code: error.code
+      })
       return { success: false, error: error.message }
     }
+
+    console.log('✅ Profile updated successfully:', profile)
 
     revalidatePath('/choferes')
     revalidatePath(`/choferes/${profileId}`)
     return { success: true, data: profile as ChoferWithProfile }
   } catch (error) {
-    console.error("Error in updateChoferProfile:", error)
+    console.error("❌ Error in updateChoferProfile:", error)
     return { success: false, error: "Failed to update chofer profile" }
   }
 }

@@ -75,6 +75,13 @@ export default function ChoferesList({
   initialTotal,
   initialError 
 }: ChoferesListProps) {
+  // Check for missing chofer IDs and warn
+  initialChoferes?.forEach(chofer => {
+    if (!chofer.id) {
+      console.warn('⚠️ LIST: Chofer without ID found:', { user_id: chofer.user_id, email: chofer.email })
+    }
+  })
+  
   const [choferes, setChoferes] = useState<ChoferWithProfile[]>(initialChoferes)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -175,6 +182,9 @@ export default function ChoferesList({
   }
 
   const openEditModal = (chofer: ChoferWithProfile) => {
+    if (!chofer.id) {
+      console.warn('⚠️ LIST: Opening edit modal for chofer without ID:', { user_id: chofer.user_id, email: chofer.email })
+    }
     setChoferToEdit(chofer)
     setChoferModalOpen(true)
   }
@@ -185,13 +195,29 @@ export default function ChoferesList({
   }
 
   const handleChoferCreated = (newChofer: ChoferWithProfile) => {
-    setChoferes(prev => [newChofer, ...prev])
+    console.log('➕ LIST: Adding new chofer to local state:', newChofer)
+    setChoferes(prev => {
+      const updated = [newChofer, ...prev]
+      console.log('➕ LIST: New chofer added to state, new total:', updated.length)
+      return updated
+    })
   }
 
   const handleChoferUpdated = (updatedChofer: ChoferWithProfile) => {
-    setChoferes(prev => prev.map(c => 
-      c.id === updatedChofer.id ? updatedChofer : c
-    ))
+    console.log('🔄 LIST: Updating chofer in local state:', updatedChofer)
+    setChoferes(prev => {
+      const updated = prev.map(c => {
+        // Match by id first, then fallback to user_id if id is missing
+        if (c.id && updatedChofer.id && c.id === updatedChofer.id) {
+          return updatedChofer
+        } else if (c.user_id === updatedChofer.user_id) {
+          return updatedChofer
+        }
+        return c
+      })
+      console.log('🔄 LIST: Chofer updated in state, total choferes:', updated.length)
+      return updated
+    })
   }
 
   if (initialError) {

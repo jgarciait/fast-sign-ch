@@ -112,6 +112,16 @@ interface Document {
   file_records?: FileRecord[]
   document_type?: string
   documentStatus?: string
+  document_assignments?: Array<{
+    id: string
+    status: string
+    priority?: string
+    delivery_address?: string
+    client_name?: string
+    expected_delivery_date?: string
+    assigned_at: string
+    completed_at?: string
+  }>
 }
 
 interface FastSignDocumentManagerProps {
@@ -523,38 +533,28 @@ function FastSignDocumentManagerInternal({ onClose }: FastSignDocumentManagerPro
   }
 
   const formatStatus = (document: Document) => {
-    // Detectar si es documento de fast_sign o de email
-    const isFastSignDocument = document.document_type === 'fast_sign'
+    // Check if document has assignment status (from delivery/assignment system)
+    const assignments = (document as any).document_assignments || []
     
-    // Para documentos de fast_sign, usar el status de la columna status
-    // Para documentos de email, usar documentStatus o fallback
-    let displayStatus = document.documentStatus || "sin_mapeo"
-    if (isFastSignDocument) {
-      displayStatus = (document.status || 'sin_firma').toLowerCase()
+    let displayStatus = "sin_asignar"
+    if (assignments.length > 0) {
+      // Use the most recent assignment status
+      const latestAssignment = assignments[0] // Assuming ordered by most recent
+      displayStatus = latestAssignment.status || "assigned"
     }
 
-    const emailStatusConfig = {
-      signed: { text: "Firmado", className: "bg-green-100 text-green-800 border-green-200" },
-      pending: { text: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-      expired: { text: "Expirado", className: "bg-red-100 text-red-800 border-red-200" },
-      sin_mapeo: { text: "Sin Mapeo", className: "bg-blue-100 text-blue-800 border-blue-200" },
-      draft: { text: "Borrador", className: "bg-gray-100 text-gray-800 border-gray-200" }
+    const assignmentStatusConfig = {
+      assigned: { text: "Asignado", className: "bg-blue-100 text-blue-800 border-blue-200" },
+      in_progress: { text: "En Tránsito", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+      in_transit: { text: "En Tránsito", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+      completed: { text: "Completado", className: "bg-green-100 text-green-800 border-green-200" },
+      signed: { text: "Firmado", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+      cancelled: { text: "Cancelado", className: "bg-red-100 text-red-800 border-red-200" },
+      sin_asignar: { text: "Sin Asignar", className: "bg-gray-100 text-gray-800 border-gray-200" }
     }
 
-    const fastSignStatusConfig = {
-      firmado: { text: "Firmado", className: "bg-green-100 text-green-800 border-green-200" },
-      signed: { text: "Firmado", className: "bg-green-100 text-green-800 border-green-200" },
-      pending: { text: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-      pendiente: { text: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-      expired: { text: "Expirado", className: "bg-red-100 text-red-800 border-red-200" },
-      expirado: { text: "Expirado", className: "bg-red-100 text-red-800 border-red-200" },
-      sin_firma: { text: "Sin Firma", className: "bg-gray-100 text-gray-800 border-gray-200" },
-      draft: { text: "Borrador", className: "bg-gray-100 text-gray-800 border-gray-200" }
-    }
-
-    const statusConfig = isFastSignDocument ? fastSignStatusConfig : emailStatusConfig
-    const config = statusConfig[displayStatus as keyof typeof statusConfig] ||
-      (isFastSignDocument ? fastSignStatusConfig.sin_firma : emailStatusConfig.sin_mapeo)
+    const config = assignmentStatusConfig[displayStatus as keyof typeof assignmentStatusConfig] ||
+      assignmentStatusConfig.sin_asignar
 
     return (
       <div className="flex items-center space-x-2">
