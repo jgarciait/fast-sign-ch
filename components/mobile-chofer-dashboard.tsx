@@ -17,7 +17,8 @@ import {
   CheckCircle,
   XCircle,
   Package,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from "lucide-react"
 import { format, isToday, isTomorrow, isYesterday } from "date-fns"
 import { es } from "date-fns/locale"
@@ -27,11 +28,14 @@ import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import type { AssignmentWithDetails } from "@/types/assignment-types"
 import { MobileStatusUpdater } from "@/components/mobile-status-updater"
+import MobilePDFViewerModal from "@/components/mobile-pdf-viewer-modal"
 
 export default function MobileChoferDashboard() {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showPDFModal, setShowPDFModal] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<{url: string, name: string} | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -101,6 +105,36 @@ export default function MobileChoferDashboard() {
     if (!address) return
     const encodedAddress = encodeURIComponent(address)
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank')
+  }
+
+  const handleViewPDF = (assignment: AssignmentWithDetails) => {
+    if (!assignment.document?.id) {
+      console.error('No document ID available')
+      alert('Error: No se encontró el ID del documento')
+      return
+    }
+
+    console.log('🚛 MOBILE PDF: Opening document:', {
+      id: assignment.document.id,
+      name: assignment.document.file_name,
+      path: assignment.document.file_path
+    })
+
+    // Always use the API endpoint for consistent handling
+    const pdfUrl = `/api/pdf/${assignment.document.id}`
+
+    console.log('🚛 MOBILE PDF: Generated URL:', pdfUrl)
+
+    setSelectedDocument({
+      url: pdfUrl,
+      name: assignment.document.file_name || 'Conduce'
+    })
+    setShowPDFModal(true)
+  }
+
+  const handleClosePDFModal = () => {
+    setShowPDFModal(false)
+    setSelectedDocument(null)
   }
 
   const getStatusColor = (status: string) => {
@@ -279,6 +313,17 @@ export default function MobileChoferDashboard() {
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
+                  {/* PDF View Button */}
+                  <Button
+                    onClick={() => handleViewPDF(assignment)}
+                    variant="default"
+                    size="sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver Conduce
+                  </Button>
+
                   {assignment.delivery_address && (
                     <Button
                       onClick={() => openGoogleMaps(assignment.delivery_address)}
@@ -314,6 +359,14 @@ export default function MobileChoferDashboard() {
           </div>
         )}
       </div>
+
+      {/* PDF Viewer Modal */}
+      <MobilePDFViewerModal
+        isOpen={showPDFModal}
+        onClose={handleClosePDFModal}
+        documentUrl={selectedDocument?.url}
+        documentName={selectedDocument?.name}
+      />
     </div>
   )
 }

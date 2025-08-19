@@ -184,6 +184,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=3600", // Cache for 1 hour
         "Content-Disposition": `inline; ${encodeFileNameForHeader(document.file_name)}`,
+        // Remove X-Frame-Options to allow iframe embedding
+        "X-Frame-Options": "SAMEORIGIN", // Allow same-origin framing
+        "Content-Security-Policy": "frame-ancestors 'self'", // Modern alternative to X-Frame-Options
       },
     })
 
