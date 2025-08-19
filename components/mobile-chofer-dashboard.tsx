@@ -28,14 +28,13 @@ import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import type { AssignmentWithDetails } from "@/types/assignment-types"
 import { MobileStatusUpdater } from "@/components/mobile-status-updater"
-import MobilePDFViewerModal from "@/components/mobile-pdf-viewer-modal"
+
 
 export default function MobileChoferDashboard() {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showPDFModal, setShowPDFModal] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<{url: string, name: string} | null>(null)
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -114,27 +113,8 @@ export default function MobileChoferDashboard() {
       return
     }
 
-    console.log('🚛 MOBILE PDF: Opening document:', {
-      id: assignment.document.id,
-      name: assignment.document.file_name,
-      path: assignment.document.file_path
-    })
-
-    // Always use the API endpoint for consistent handling
     const pdfUrl = `/api/pdf/${assignment.document.id}`
-
-    console.log('🚛 MOBILE PDF: Generated URL:', pdfUrl)
-
-    setSelectedDocument({
-      url: pdfUrl,
-      name: assignment.document.file_name || 'Conduce'
-    })
-    setShowPDFModal(true)
-  }
-
-  const handleClosePDFModal = () => {
-    setShowPDFModal(false)
-    setSelectedDocument(null)
+    window.open(pdfUrl, '_blank')
   }
 
   const getStatusColor = (status: string) => {
@@ -360,13 +340,7 @@ export default function MobileChoferDashboard() {
         )}
       </div>
 
-      {/* PDF Viewer Modal */}
-      <MobilePDFViewerModal
-        isOpen={showPDFModal}
-        onClose={handleClosePDFModal}
-        documentUrl={selectedDocument?.url}
-        documentName={selectedDocument?.name}
-      />
+
     </div>
   )
 }
