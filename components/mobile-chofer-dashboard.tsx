@@ -18,7 +18,8 @@ import {
   XCircle,
   Package,
   RefreshCw,
-  Eye
+  Eye,
+  User
 } from "lucide-react"
 import { format, isToday, isTomorrow, isYesterday } from "date-fns"
 import { es } from "date-fns/locale"
@@ -263,6 +264,12 @@ export default function MobileChoferDashboard() {
                         {assignment.document?.file_name || 'Documento'}
                       </h3>
                     </div>
+                    {assignment.client_name && (
+                      <div className="flex items-center text-xs text-gray-600 mb-1">
+                        <User className="w-3 h-3 mr-1 flex-shrink-0 text-blue-600" />
+                        <span className="truncate">Cliente: {assignment.client_name}</span>
+                      </div>
+                    )}
                     <div className="flex items-center text-xs text-gray-500 mb-1">
                       <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
                       <span className="truncate">

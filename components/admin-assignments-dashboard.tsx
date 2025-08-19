@@ -191,7 +191,15 @@ export default function AdminAssignmentsDashboard() {
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <span className="text-gray-500">Cliente:</span>
+            <div className="font-medium flex items-center">
+              <User className="w-4 h-4 mr-2 text-blue-600" />
+              {assignment.client_name || 'No especificado'}
+            </div>
+          </div>
+          
           <div>
             <span className="text-gray-500">Chofer:</span>
             <div className="font-medium flex items-center">
