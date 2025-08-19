@@ -12,7 +12,7 @@ export default async function Home() {
   } = await supabase.auth.getUser()
 
   if (user) {
-    redirect("/fast-sign")
+    redirect("/fast-sign-docs")
   }
 
   return (
@@ -26,7 +26,7 @@ export default async function Home() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-center mb-4">Bienvenido a AQ Fast Sign V2.0</h1>
-          <p className="text-center mb-12">La forma segura y eficiente de firmar y gestionar tus documentos</p>
+          <p className="text-center mb-12">Sistema de gestión de conduces y asignaciones para choferes</p>
 
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="bg-[#1a3a5f] p-6 rounded-lg">
@@ -67,12 +67,12 @@ export default async function Home() {
       {/* Right side - Login form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Yabucoop Logo */}
+          {/* Cardinal Health Logo */}
           <div className="flex justify-center mb-6">
             <img 
-              src="/yabucoop_logo.jpg" 
-              alt="Yabucoop Logo" 
-              className="h-36 w-auto object-contain rounded-xl"
+              src="/cardinal_logo.png" 
+              alt="Cardinal Health Logo" 
+              className="h-36 w-auto object-contain"
             />
           </div>
           <h2 className="text-2xl font-bold mb-2">Inicia sesión en tu cuenta</h2>

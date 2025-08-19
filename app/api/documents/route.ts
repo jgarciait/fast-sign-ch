@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         .single()
 
       const publicUrl = supabase.storage
-        .from('public-documents')
+        .from('public_documents')
         .getPublicUrl(document.file_path).data.publicUrl
       
       const documentWithUrl = {
@@ -287,7 +287,7 @@ export async function GET(request: NextRequest) {
     // Transform documents and generate public URLs
     const documentsWithUrls = (documents || []).map(doc => {
       const publicUrl = supabase.storage
-        .from('public-documents')
+        .from('public_documents')
         .getPublicUrl(doc.file_path).data.publicUrl
       
       // Get creator info from the profilesMap (same as fast-sign-actions)
@@ -407,7 +407,7 @@ export async function DELETE(request: NextRequest) {
     // 5. Delete the file from storage
     if (document.file_path) {
       const { error: storageError } = await supabase.storage
-        .from('public-documents')
+        .from('public_documents')
         .remove([document.file_path])
 
       if (storageError) {

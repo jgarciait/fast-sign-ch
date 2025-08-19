@@ -51,13 +51,15 @@ export async function getSignatureTemplates() {
   }
 
   try {
+    // Only load metadata, not signature_data to avoid 431 errors
     const { data, error } = await supabase
       .from("signature_templates")
-      .select("*")
+      .select("id, user_id, template_name, signature_type, is_default, is_active, created_at, updated_at")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: false })
+      .limit(10) // Limit to prevent too much data
 
     if (error) {
       console.error("Database error in getSignatureTemplates:", error)
@@ -187,6 +189,77 @@ export async function deleteSignatureTemplate(templateId: string) {
   }
 }
 
+// Get signature data for a specific template
+export async function getSignatureTemplateData(templateId: string) {
+  const supabase = await createClient()
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Not authenticated", signature_data: null }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("signature_templates")
+      .select("signature_data")
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single()
+
+    if (error) {
+      console.error("Database error in getSignatureTemplateData:", error)
+      return { error: `Database error: ${error.message}`, signature_data: null }
+    }
+
+    return { signature_data: data?.signature_data || null }
+  } catch (error) {
+    console.error("Error in getSignatureTemplateData:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+      signature_data: null,
+    }
+  }
+}
+
+// Get customer signature data for a specific customer signature
+export async function getCustomerSignatureData(signatureId: string) {
+  const supabase = await createClient()
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Not authenticated", signature_data: null }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("customer_signatures")
+      .select("signature_data")
+      .eq("id", signatureId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (error) {
+      console.error("Database error in getCustomerSignatureData:", error)
+      return { error: `Database error: ${error.message}`, signature_data: null }
+    }
+
+    return { signature_data: data?.signature_data || null }
+  } catch (error) {
+    console.error("Error in getCustomerSignatureData:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+      signature_data: null,
+    }
+  }
+}
+
 export async function getDefaultSignatureTemplate() {
   const supabase = await createClient()
   
@@ -199,9 +272,10 @@ export async function getDefaultSignatureTemplate() {
   }
 
   try {
+    // Only get metadata first - NO signature_data
     const { data, error } = await supabase
       .from("signature_templates")
-      .select("*")
+      .select("id, user_id, template_name, signature_type, is_default, is_active, created_at, updated_at")
       .eq("user_id", user.id)
       .eq("is_default", true)
       .eq("is_active", true)
@@ -237,9 +311,10 @@ export async function getCustomers() {
   try {
     const { data, error } = await supabase
       .from("customers")
-      .select("*")
+      .select("id, user_id, first_name, last_name, email, telephone, postal_address, created_at")
       .or(`user_id.eq.${user.id},user_id.is.null`) // User's customers or legacy customers
       .order("created_at", { ascending: false })
+      .limit(50) // Reasonable limit
 
     if (error) {
       console.error("Database error in getCustomers:", error)
@@ -310,13 +385,15 @@ export async function getCustomerSignatures(customerId: string) {
   }
 
   try {
+    // Only load metadata, not signature_data to avoid 431 errors
     const { data, error } = await supabase
       .from("customer_signatures")
-      .select("*")
+      .select("id, user_id, customer_id, signature_name, signature_type, is_default_for_customer, created_at, updated_at")
       .eq("user_id", user.id)
       .eq("customer_id", customerId)
       .order("is_default_for_customer", { ascending: false })
       .order("created_at", { ascending: false })
+      .limit(20) // Reasonable limit
 
     if (error) {
       console.error("Database error in getCustomerSignatures:", error)
@@ -390,9 +467,10 @@ export async function getDefaultCustomerSignature(customerId: string) {
   }
 
   try {
+    // Only get metadata first
     const { data, error } = await supabase
       .from("customer_signatures")
-      .select("*")
+      .select("id, user_id, customer_id, signature_name, signature_type, is_default_for_customer, created_at, updated_at")
       .eq("user_id", user.id)
       .eq("customer_id", customerId)
       .eq("is_default_for_customer", true)

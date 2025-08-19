@@ -28,7 +28,7 @@ export default function AuthConfirmPage() {
         } else {
           setMessage("Email confirmed! Redirecting...")
           setTimeout(() => {
-            router.push("/fast-sign")
+            router.push("/fast-sign-docs")
           }, 2000)
         }
       }

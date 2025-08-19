@@ -554,7 +554,7 @@ export async function saveRotatedDocumentForSigning(
         file_type: 'application/pdf',
         document_type: 'fast_sign', // Fast sign document type
         archived: false,
-        status: 'uploaded'
+        status: 'sin_firma' // Consistent status for fast_sign documents
       })
       .select()
       .single()

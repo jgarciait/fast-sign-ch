@@ -41,7 +41,7 @@ export async function POST(
 
     // Download the current PDF from storage
     const { data: pdfData, error: downloadError } = await supabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .download(document.file_path)
 
     if (downloadError || !pdfData) {
@@ -66,7 +66,7 @@ export async function POST(
     
     // Update the existing file in storage
     const { error: uploadError } = await supabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .update(document.file_path, modifiedPdfBytes, {
         contentType: 'application/pdf',
         upsert: true

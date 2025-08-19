@@ -795,6 +795,7 @@ export async function createFastSignDocument(
         file_size: fileSize,
         file_type: fileType,
         document_type: "fast_sign",
+        status: "sin_firma", // Set initial status as "sin firma"
         archived: false,
       })
       .select()

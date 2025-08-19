@@ -38,7 +38,7 @@ export async function GET(
 
     // Get the public URL for the document
     const { data: urlData } = supabase.storage
-      .from("public-documents")
+      .from("public_documents")
       .getPublicUrl(document.file_path)
 
     return NextResponse.json({

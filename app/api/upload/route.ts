@@ -7,10 +7,10 @@ export async function POST(request: NextRequest) {
   try {
     // Check content length before processing
     const contentLength = request.headers.get("content-length")
-    const maxSize = 50 * 1024 * 1024 // 50MB
+    const maxSize = 200 * 1024 * 1024 // 200MB
 
     if (contentLength && Number.parseInt(contentLength) > maxSize) {
-      return NextResponse.json({ error: "File too large. Maximum size is 50MB." }, { status: 413 })
+      return NextResponse.json({ error: "File too large. Maximum size is 200MB." }, { status: 413 })
     }
 
     let formData: FormData
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     // Handle different types of errors
     if (error instanceof Error) {
       if (error.message.includes("PayloadTooLargeError") || error.message.includes("Request Entity Too Large")) {
-        return NextResponse.json({ error: "File too large. Maximum size is 50MB." }, { status: 413 })
+        return NextResponse.json({ error: "File too large. Maximum size is 200MB." }, { status: 413 })
       }
 
       return NextResponse.json({ error: `Upload error: ${error.message}` }, { status: 500 })

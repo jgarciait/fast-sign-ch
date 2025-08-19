@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { createPortal } from "react-dom"
+import { AssignDocumentDropdownItem } from "./document-assignment-button"
+import DocumentAssignmentButton from "./document-assignment-button"
 import { formatDistanceToNow, format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -297,9 +299,19 @@ const VirtualizedDocumentTable = React.memo(({
     }
 
     switch (displayStatus) {
-      case 'signed':
+      // Delivery statuses (new)
+      case 'asignado':
+        return { text: 'Asignado', color: 'bg-blue-100 text-blue-800' }
+      case 'en_transito':
+      case 'en transito':
+        return { text: 'En Tránsito', color: 'bg-orange-100 text-orange-800' }
       case 'firmado':
+      case 'signed':
         return { text: 'Firmado', color: 'bg-green-100 text-green-800' }
+      case 'cancelado':
+        return { text: 'Cancelado', color: 'bg-red-100 text-red-800' }
+      
+      // Original statuses
       case 'pending':
       case 'pendiente':
         return { text: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' }
@@ -309,7 +321,7 @@ const VirtualizedDocumentTable = React.memo(({
       case 'sin_firma':
         return { text: 'Sin Firma', color: 'bg-gray-100 text-gray-800' }
       case 'sin_mapeo':
-        return { text: 'Sin Mapeo', color: 'bg-blue-100 text-blue-800' }
+        return { text: 'Sin Mapeo', color: 'bg-purple-100 text-purple-800' }
       default:
         return { text: displayStatus, color: 'bg-gray-100 text-gray-800' }
     }
@@ -327,7 +339,7 @@ const VirtualizedDocumentTable = React.memo(({
         style={{ minHeight: '80px' }}
       >
         {/* Document */}
-        <div className={`flex items-center space-x-3 ${isArchived ? 'col-span-4' : 'col-span-5'}`}>
+        <div className={`flex items-center space-x-3 ${isArchived ? 'col-span-3' : 'col-span-4'}`}>
           <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
             document.document_type === 'email' ? 'bg-blue-100' : 'bg-gray-100'
           }`}>
@@ -413,7 +425,7 @@ const VirtualizedDocumentTable = React.memo(({
         </div>
 
         {/* Actions */}
-        <div className={`flex justify-end ${isArchived ? 'col-span-4' : 'col-span-4'}`}>
+        <div className={`flex justify-end ${isArchived ? 'col-span-5' : 'col-span-5'}`}>
                      {isWideScreen ? (
              <div className="flex items-center space-x-1">
                    <Button
@@ -459,6 +471,13 @@ const VirtualizedDocumentTable = React.memo(({
                      <Download className="h-3 w-3" />
                      <span className="text-xs leading-none">Descargar</span>
                    </Button>
+                   
+                   <DocumentAssignmentButton
+                     documentId={document.id}
+                     documentName={document.file_name}
+                     variant="button"
+                     className="h-12 px-2 text-orange-600 hover:text-white hover:bg-orange-600 transition-colors flex flex-col items-center gap-0.5"
+                   />
 
                    {isArchived ? (
                      <Button
@@ -525,6 +544,15 @@ const VirtualizedDocumentTable = React.memo(({
                   Descargar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <AssignDocumentDropdownItem 
+                  documentId={document.id}
+                  documentName={document.file_name}
+                  onAssignmentCreated={(assignmentId) => {
+                    console.log('Assignment created:', assignmentId)
+                    // Could add callback here to refresh queries if needed
+                  }}
+                />
+                <DropdownMenuSeparator />
                 {isArchived ? (
                   <DropdownMenuItem onClick={() => onUnarchive(document.id)}>
                     <ArchiveRestore className="mr-2 h-4 w-4" />
@@ -559,7 +587,7 @@ const VirtualizedDocumentTable = React.memo(({
         style={{ minHeight: '70px' }}
       >
         {/* Document */}
-        <div className="flex items-center space-x-2 col-span-4">
+        <div className="flex items-center space-x-2 col-span-3">
           <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
             document.document_type === 'email' ? 'bg-blue-100' : 'bg-gray-100'
           }`}>
@@ -611,7 +639,7 @@ const VirtualizedDocumentTable = React.memo(({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end col-span-1">
+        <div className="flex justify-end col-span-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -640,6 +668,15 @@ const VirtualizedDocumentTable = React.memo(({
                 <Download className="mr-2 h-4 w-4" />
                 Descargar
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AssignDocumentDropdownItem 
+                documentId={document.id}
+                documentName={document.file_name}
+                onAssignmentCreated={(assignmentId) => {
+                  console.log('Assignment created:', assignmentId)
+                  // Could add callback here to refresh queries if needed
+                }}
+              />
               <DropdownMenuSeparator />
               {isArchived ? (
                 <DropdownMenuItem onClick={() => onUnarchive(document.id)}>
@@ -751,7 +788,7 @@ const VirtualizedDocumentTable = React.memo(({
         {/* Headers */}
         <div className="bg-[#1f2937] border-b border-gray-200">
           <div className={`grid gap-4 px-6 py-4 ${isArchived ? 'grid-cols-12' : 'grid-cols-11'}`}>
-            <div className={`text-xs font-semibold text-white uppercase tracking-wider ${isArchived ? 'col-span-4' : 'col-span-5'}`}>Documento</div>
+            <div className={`text-xs font-semibold text-white uppercase tracking-wider ${isArchived ? 'col-span-3' : 'col-span-4'}`}>Documento</div>
             {isArchived && (
               <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-2">Expediente</div>
             )}
@@ -815,11 +852,11 @@ const VirtualizedDocumentTable = React.memo(({
       <div className="hidden md:block lg:hidden bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
         {/* Headers */}
         <div className="bg-[#1f2937] border-b border-gray-200">
-          <div className="grid grid-cols-7 gap-3 px-4 py-3">
-            <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-4">Documento</div>
+          <div className="grid grid-cols-8 gap-3 px-4 py-3">
+            <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-3">Documento</div>
             <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-1">Fecha</div>
-            <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-1">Estatus</div>
-            <div className="text-xs font-semibold text-white uppercase tracking-wider text-right col-span-1">Acciones</div>
+            <div className="text-xs font-semibold text-white uppercase tracking-wider col-span-2">Estatus</div>
+            <div className="text-xs font-semibold text-white uppercase tracking-wider text-right col-span-2">Acciones</div>
           </div>
         </div>
 
@@ -1040,6 +1077,15 @@ const VirtualizedDocumentTable = React.memo(({
                             <Download className="mr-2 h-4 w-4" />
                             Descargar
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AssignDocumentDropdownItem 
+                            documentId={document.id}
+                            documentName={document.file_name}
+                            onAssignmentCreated={(assignmentId) => {
+                              console.log('Assignment created:', assignmentId)
+                              // Could add callback here to refresh queries if needed
+                            }}
+                          />
                           <DropdownMenuSeparator />
                           {isArchived ? (
                             <DropdownMenuItem onClick={() => onUnarchive(document.id)}>

@@ -1,7 +1,7 @@
 import { createClient } from "./client"
 
 // Define bucket names
-export const BUCKET_PUBLIC = "public-documents"
+export const BUCKET_PUBLIC = "public_documents"  // Updated to match created bucket
 export const BUCKET_PRIVATE = "documents"
 
 // Function to upload a file to the public bucket

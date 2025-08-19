@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from "react"
 import { X, Trash2, Edit, User, Users, Plus, Star, StarOff } from "lucide-react"
-import { 
+import {
   getSignatureTemplates, 
-  getCustomers, 
+  // getCustomers, // Using API route instead
   getCustomerSignatures,
   deleteSignatureTemplate,
   updateSignatureTemplate,
-  createSignatureTemplate,
-  createCustomerSignature
+  // createSignatureTemplate, // Using API route instead
+  // createCustomerSignature // Using API route instead
 } from "@/app/actions/signature-templates-actions"
 import type { SignatureTemplate, Customer, CustomerSignature } from "@/app/actions/signature-templates-actions"
 import { toast } from "sonner"
@@ -51,23 +51,26 @@ export default function SavedSignaturesManager({
           setTemplates(templatesResult.templates)
         }
 
-        // Load customers
-        const customersResult = await getCustomers()
-        if (customersResult.error) {
-          console.error("Error loading customers:", customersResult.error)
+        // Load customers using API route
+        const customersResponse = await fetch('/api/customers')
+        let loadedCustomers: Customer[] = []
+        if (customersResponse.ok) {
+          const customersData = await customersResponse.json()
+          loadedCustomers = customersData.customers || []
+          setCustomers(loadedCustomers)
         } else {
-          setCustomers(customersResult.customers)
-          
-          // Load signatures for each customer
-          const signaturesMap: Record<string, CustomerSignature[]> = {}
-          for (const customer of customersResult.customers) {
-            const signaturesResult = await getCustomerSignatures(customer.id)
-            if (!signaturesResult.error) {
-              signaturesMap[customer.id] = signaturesResult.signatures
-            }
-          }
-          setCustomerSignatures(signaturesMap)
+          console.error("Error loading customers:", customersResponse.statusText)
         }
+
+        // Load signatures for each customer
+        const signaturesMap: Record<string, CustomerSignature[]> = {}
+        for (const customer of loadedCustomers) {
+          const signaturesResult = await getCustomerSignatures(customer.id)
+          if (!signaturesResult.error) {
+            signaturesMap[customer.id] = signaturesResult.signatures
+          }
+        }
+        setCustomerSignatures(signaturesMap)
       } catch (error) {
         console.error("Error loading data:", error)
         toast.error("Error loading saved signatures")

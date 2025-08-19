@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { X, Save, User, Users } from "lucide-react"
 import SignaturePad from "./signature-pad"
-import { createSignatureTemplate, createCustomerSignature, getCustomers } from "@/app/actions/signature-templates-actions"
+// Using API routes instead of server actions to avoid HTTP 431 errors
+// import { createSignatureTemplate, createCustomerSignature, getCustomers } from "@/app/actions/signature-templates-actions"
 import type { Customer } from "@/app/actions/signature-templates-actions"
 import { toast } from "sonner"
 import { processWacomSignature } from "@/utils/wacom-signature-processor"
@@ -45,11 +46,13 @@ export default function EnhancedSignatureModal({
     const loadCustomers = async () => {
       setIsLoadingCustomers(true)
       try {
-        const result = await getCustomers()
-        if (result.error) {
-          console.error("Error loading customers:", result.error)
+        // Use API route instead of server action to avoid HTTP 431 errors
+        const response = await fetch('/api/customers')
+        if (response.ok) {
+          const data = await response.json()
+          setCustomers(data.customers || [])
         } else {
-          setCustomers(result.customers)
+          console.error("Error loading customers:", response.statusText)
         }
       } catch (error) {
         console.error("Error loading customers:", error)
@@ -167,18 +170,28 @@ export default function EnhancedSignatureModal({
         return
       }
 
-      const result = await createSignatureTemplate(
-        templateName.trim(),
-        currentSignatureData,
-        currentSignatureSource,
-        false // Not default by default
-      )
+      // Use API route instead of server action
+      const response = await fetch('/api/signature-templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          template_name: templateName.trim(),
+          signature_data: currentSignatureData,
+          signature_type: currentSignatureSource,
+          is_default: false // Not default by default
+        }),
+      })
 
-      if (result.error) {
-        toast.error(`Error guardando la plantilla: ${result.error}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        toast.error(`Error guardando la plantilla: ${errorData.error || 'Failed to save signature'}`)
         setIsSaving(false)
         return
       }
+
+      const result = await response.json()
 
       toast.success(`Plantilla "${templateName}" guardada exitosamente!`)
 

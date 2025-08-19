@@ -4,8 +4,69 @@ import React, { useState, useEffect } from "react"
 import { X, Plus, Star, Pen } from "lucide-react"
 import SavedSignaturesManager from "./saved-signatures-manager"
 import EnhancedSignatureModal from "./enhanced-signature-modal"
-import { getSignatureTemplates, getDefaultSignatureTemplate } from "@/app/actions/signature-templates-actions"
+// Using API routes instead of server actions to avoid HTTP 431 errors
+// import { getSignatureTemplates, getDefaultSignatureTemplate, getSignatureTemplateData } from "@/app/actions/signature-templates-actions"
 import type { SignatureTemplate } from "@/app/actions/signature-templates-actions"
+
+// Component to preview signature with lazy loading
+function SignaturePreview({ 
+  signature, 
+  signatureDataCache, 
+  onSignatureDataLoaded,
+  className = "h-6 max-w-20 object-contain"
+}: { 
+  signature: SignatureTemplate
+  signatureDataCache: Record<string, string>
+  onSignatureDataLoaded: (id: string, data: string) => void
+  className?: string
+}) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    // If we already have the data or it's loading, don't fetch again
+    if (signatureDataCache[signature.id] || isLoading) return
+
+    // Load signature data on mount using API route
+    const loadSignatureData = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/signature-templates/${signature.id}`)
+        if (response.ok) {
+          const result = await response.json()
+          if (result.signature_data) {
+            onSignatureDataLoaded(signature.id, result.signature_data)
+          }
+        } else {
+          console.error('Failed to load signature data:', response.statusText)
+        }
+      } catch (error) {
+        console.error('Error loading signature preview:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadSignatureData()
+  }, [signature.id, signatureDataCache, onSignatureDataLoaded, isLoading])
+
+  const signatureData = signatureDataCache[signature.id]
+
+  if (isLoading || !signatureData) {
+    return (
+      <div className={`${className} bg-gray-100 rounded flex items-center justify-center`}>
+        <Pen className="h-3 w-3 text-gray-400" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={signatureData}
+      alt={signature.template_name}
+      className={className}
+    />
+  )
+}
 
 interface SignatureSelectionModalProps {
   isOpen: boolean
@@ -24,6 +85,7 @@ export default function SignatureSelectionModal({
   const [showSavedModal, setShowSavedModal] = useState(false)
   const [defaultSignature, setDefaultSignature] = useState<SignatureTemplate | null>(null)
   const [recentSignatures, setRecentSignatures] = useState<SignatureTemplate[]>([])
+  const [signatureDataCache, setSignatureDataCache] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
 
   // Load signatures when modal opens
@@ -33,19 +95,37 @@ export default function SignatureSelectionModal({
     const loadSignatures = async () => {
       setIsLoading(true)
       try {
-        // Load default signature
-        const defaultResult = await getDefaultSignatureTemplate()
-        if (!defaultResult.error && defaultResult.template) {
-          setDefaultSignature(defaultResult.template)
-        }
-
-        // Load recent signatures (up to 3 most recent)
-        const templatesResult = await getSignatureTemplates()
-        if (!templatesResult.error) {
-          const recent = templatesResult.templates
-            .filter(t => !t.is_default) // Exclude default from recent list
-            .slice(0, 3)
+        // Use API route instead of server actions to avoid HTTP 431 errors
+        const response = await fetch('/api/signature-templates?includeDefault=true')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set default signature if exists
+          if (data.defaultTemplate) {
+            setDefaultSignature(data.defaultTemplate)
+            
+            // Load signature data for default template
+            if (data.defaultTemplate.id) {
+              try {
+                const signatureResponse = await fetch(`/api/signature-templates/${data.defaultTemplate.id}`)
+                if (signatureResponse.ok) {
+                  const signatureResult = await signatureResponse.json()
+                  if (signatureResult.signature_data) {
+                    setDefaultSignature(prev => prev ? { ...prev, signature_data: signatureResult.signature_data } : null)
+                  }
+                }
+              } catch (error) {
+                console.error('Error loading default signature data:', error)
+              }
+            }
+          }
+          
+          // Set recent signatures (excluding default)
+          const recent = (data.templates || []).slice(0, 3)
           setRecentSignatures(recent)
+          
+        } else {
+          console.error('Failed to load signature templates:', response.statusText)
         }
       } catch (error) {
         console.error("Error loading signatures:", error)
@@ -65,8 +145,29 @@ export default function SignatureSelectionModal({
     setShowSavedModal(true)
   }
 
-  const handleUseSignature = (signature: SignatureTemplate) => {
-    onComplete(signature.signature_data, signature.signature_type as 'canvas' | 'wacom')
+  const handleUseSignature = async (signature: SignatureTemplate) => {
+    // If signature_data is already loaded, use it
+    if (signature.signature_data) {
+      onComplete(signature.signature_data, signature.signature_type as 'canvas' | 'wacom')
+      return
+    }
+
+    // Otherwise, load it on demand using API route
+    try {
+      const response = await fetch(`/api/signature-templates/${signature.id}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.signature_data) {
+          onComplete(result.signature_data, signature.signature_type as 'canvas' | 'wacom')
+        } else {
+          console.error('No signature data found')
+        }
+      } else {
+        console.error('Failed to load signature data:', response.statusText)
+      }
+    } catch (error) {
+      console.error('Error loading signature data:', error)
+    }
   }
 
   const handleCreateComplete = (dataUrl: string, source: 'canvas' | 'wacom') => {
@@ -143,10 +244,12 @@ export default function SignatureSelectionModal({
                         onClick={() => handleUseSignature(signature)}
                       >
                         <div className="bg-gray-50 border border-gray-200 rounded p-1 flex-shrink-0">
-                          <img
-                            src={signature.signature_data}
-                            alt={signature.template_name}
-                            className="h-6 max-w-20 object-contain"
+                          <SignaturePreview 
+                            signature={signature}
+                            signatureDataCache={signatureDataCache}
+                            onSignatureDataLoaded={(id, data) => {
+                              setSignatureDataCache(prev => ({ ...prev, [id]: data }))
+                            }}
                           />
                         </div>
                         <div className="flex-1 min-w-0">

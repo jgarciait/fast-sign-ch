@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Move the file within Supabase storage
     const { error: moveError } = await supabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .move(tempDoc.file_path, finalPath)
 
     if (moveError) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Generate the public URL for the document
     const { data: urlData } = supabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .getPublicUrl(updatedDoc.file_path)
 
     return NextResponse.json({

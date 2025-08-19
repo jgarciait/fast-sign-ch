@@ -55,7 +55,7 @@ export async function uploadFileToTempStorage(
           removeFingerprintOnSuccess: true,
           chunkSize: 6 * 1024 * 1024, // 6MB chunks as required by Supabase
           metadata: {
-            bucketName: 'documents',
+            bucketName: 'public_documents',
             objectName: tempPath,
             contentType: file.type,
             cacheControl: '3600',
@@ -101,7 +101,7 @@ export async function cleanupTempFiles(sessionId: string): Promise<void> {
     
     // List all files in the session directory
     const { data: files, error: listError } = await supabase.storage
-      .from('documents')
+      .from('public_documents')
       .list(`temp-merge/${sessionId}`)
     
     if (listError) {
@@ -118,7 +118,7 @@ export async function cleanupTempFiles(sessionId: string): Promise<void> {
     const filePaths = files.map(file => `temp-merge/${sessionId}/${file.name}`)
     
     const { error: deleteError } = await supabase.storage
-      .from('documents')
+      .from('public_documents')
       .remove(filePaths)
     
     if (deleteError) {

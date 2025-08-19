@@ -24,7 +24,9 @@ import {
   Combine,
   Wrench,
   User as UserIcon,
-  Users as UsersIcon
+  Users as UsersIcon,
+  Truck,
+  ClipboardCheck
 } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 import { Logo } from "./logo"
@@ -116,41 +118,24 @@ export default function Sidebar({
     onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
   }> = [
       {
-        name: "Firmar Documentos",
-        href: "/fast-sign",
-        icon: Pen,
-        onClick: handleFirmasClick,
-      },
-      {
-        name: "Mis Documentos",
+        name: "Mis Conduces",
         href: "/fast-sign-docs",
         icon: UserIcon,
       },
       {
-        name: "Todos los Documentos",
+        name: "Todos los Conduces",
         href: "/fast-sign-docs-v2",
         icon: UsersIcon,
       },
       {
-        name: "Enviar a Firmar",
-        href: "/sent-to-sign",
-        icon: Send,
+        name: "Choferes",
+        href: "/choferes",
+        icon: Truck,
       },
       {
-        name: "Seguimiento",
-        href: "/documents",
-        icon: FileSearch,
-      },
-      {
-        name: "Expedientes",
-        href: "/case-files",
-        icon: Folder,
-      },
-
-      {
-        name: "Merge PDF",
-        href: "/merge-pdf",
-        icon: Combine,
+        name: "Mis Asignaciones",
+        href: "/mis-asignaciones",
+        icon: ClipboardCheck,
       },
       {
         name: "Panel",
@@ -158,7 +143,28 @@ export default function Sidebar({
         icon: LayoutDashboard,
       },
       {
-        name: "Contactos",
+        name: "Expedientes",
+        href: "/case-files",
+        icon: Folder,
+      },
+      {
+        name: "Firmar Documentos",
+        href: "/fast-sign",
+        icon: Pen,
+        onClick: handleFirmasClick,
+      },
+      {
+        name: "Enviar por Email",
+        href: "/sent-to-sign",
+        icon: Send,
+      },
+      {
+        name: "Seguimiento Email",
+        href: "/documents",
+        icon: FileSearch,
+      },
+      {
+        name: "Recipientes Email",
         href: "/customers",
         icon: Users,
       },
@@ -182,7 +188,7 @@ export default function Sidebar({
   const SidebarContent = () => (
     <>
       <div className="p-4 flex items-center justify-between " style={{ borderColor: '#E5E7EB' }}>
-        <Link href="/fast-sign" className={`flex items-center ${collapsed ? "justify-center" : ""}`}>
+        <Link href="/fast-sign-docs" className={`flex items-center ${collapsed ? "justify-center" : ""}`}>
           <Logo className="h-8 w-8" color="#0d2340" />
           {!collapsed && <span className="ml-2 font-semibold" style={{ color: '#282828' }}>AQ Fast Sign</span>}
         </Link>

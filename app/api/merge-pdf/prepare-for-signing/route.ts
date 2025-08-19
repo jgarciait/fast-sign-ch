@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       
       // Get public URL for the document
       const { data: { publicUrl } } = supabase.storage
-        .from('public-documents')
+        .from('public_documents')
         .getPublicUrl(document.file_path)
 
       result = {
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
 
       // Get public URL for the document
       const { data: { publicUrl } } = supabase.storage
-        .from('public-documents')
+        .from('public_documents')
         .getPublicUrl(document.file_path)
 
       result = {

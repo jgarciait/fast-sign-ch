@@ -105,7 +105,7 @@ export async function mergePdfFromStorage(request: MergeFromStorageRequest): Pro
     
     // Upload merged PDF to storage
     const { data: uploadData, error: uploadError } = await adminSupabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .upload(filePath, pdfBytes, {
         contentType: 'application/pdf',
         cacheControl: '3600'
@@ -147,7 +147,7 @@ export async function mergePdfFromStorage(request: MergeFromStorageRequest): Pro
     if (dbError) {
       console.error('Error inserting document record:', dbError)
       // Clean up uploaded file
-      await adminSupabase.storage.from('public-documents').remove([uploadData.path])
+      await adminSupabase.storage.from('public_documents').remove([uploadData.path])
       await cleanupTempFiles(adminSupabase, request.sessionId)
       return { success: false, error: `Error saving document record: ${dbError.message}` }
     }
@@ -157,7 +157,7 @@ export async function mergePdfFromStorage(request: MergeFromStorageRequest): Pro
     
     // Generate public URL for the merged document
     const { data: urlData } = adminSupabase.storage
-      .from('public-documents')
+      .from('public_documents')
       .getPublicUrl(uploadData.path)
     
     console.log('PDF merge completed successfully')

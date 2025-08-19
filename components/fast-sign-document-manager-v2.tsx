@@ -26,7 +26,8 @@ import {
     ChevronsLeft,
     ChevronsRight,
     ArrowRight,
-    Copy
+    Copy,
+    Upload
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +83,7 @@ import { useQueryClient } from "@tanstack/react-query"
 const DocumentViewerModal = lazy(() => import("@/components/document-viewer-modal"))
 const OrganizeDocumentModal = lazy(() => import("@/components/organize-document-modal"))
 const UnarchiveDocumentModal = lazy(() => import("@/components/unarchive-document-modal"))
+const DocumentUploadModal = lazy(() => import("@/components/document-upload-modal"))
 
 interface FileRecord {
     id: string
@@ -224,6 +226,7 @@ function FastSignDocumentManagerV2Internal({ onClose }: FastSignDocumentManagerV
     })
 
     const [isWideScreen, setIsWideScreen] = useState(false)
+    const [uploadModalOpen, setUploadModalOpen] = useState(false)
 
     // Detectar ancho de pantalla
     useEffect(() => {
@@ -620,7 +623,7 @@ function FastSignDocumentManagerV2Internal({ onClose }: FastSignDocumentManagerV
         <div className="border-b border-gray-200 px-4 py-3">
                                         <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Todos los Documentos</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Todos los Conduces</h2>
                                         </div>
         </div>
 
@@ -641,6 +644,17 @@ function FastSignDocumentManagerV2Internal({ onClose }: FastSignDocumentManagerV
                       Archivados en Expedientes ({archivedTotalCount})
                     </TabsTrigger>
                 </TabsList>
+              </div>
+              
+              {/* Right side: Upload button */}
+              <div className="flex items-center">
+                <Button
+                  onClick={() => setUploadModalOpen(true)}
+                  className="bg-green-600 hover:bg-green-700 w-fit"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Subir Documento
+                </Button>
               </div>
             </div>
           </div>
@@ -892,6 +906,27 @@ function FastSignDocumentManagerV2Internal({ onClose }: FastSignDocumentManagerV
               onConfirm={() => handleConfirmUnarchive(unarchiveModal.documentId)}
             />
           )}
+        </Suspense>
+
+        {/* Document Upload Modal */}
+        <Suspense fallback={<div>Cargando...</div>}>
+          <DocumentUploadModal
+            isOpen={uploadModalOpen}
+            onClose={() => setUploadModalOpen(false)}
+            onUploadComplete={async (document) => {
+              console.log('Document uploaded successfully:', document)
+              
+              // Update document count immediately
+              setActiveTotalCount(prev => prev + 1)
+              
+              // Invalidate React Query cache to refresh the document list
+              await queryClient.invalidateQueries({ 
+                queryKey: ['infinite-documents'] 
+              })
+              
+              setUploadModalOpen(false)
+            }}
+          />
         </Suspense>
 
                         </div>

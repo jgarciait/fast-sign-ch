@@ -269,7 +269,7 @@ export async function saveMergedDocument(
         file_type: 'application/pdf',
         document_type: 'fast_sign',
         archived: false,
-        status: 'completed'
+        status: 'sin_firma' // Consistent status for fast_sign documents
       })
       .select()
       .single()
@@ -386,7 +386,7 @@ export async function uploadFileResumable(
                   file_type: 'application/pdf',
                   document_type: 'fast_sign',
                   archived: false,
-                  status: 'completed'
+                  status: 'sin_firma' // Consistent status for fast_sign documents
                 })
                 .select()
                 .single()
